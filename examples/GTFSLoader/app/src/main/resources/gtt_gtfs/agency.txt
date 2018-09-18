@@ -1,0 +1,5 @@
+"agency_id","agency_name","agency_url","agency_timezone","agency_lang","agency_phone","agency_fare_url"
+"E","GTT Servizio Extraurbano","http://www.gtt.to.it/cms/percorari/extraurbano","Europe/Rome","it","800-019152","http://www.gtt.to.it/cms/biglietti-abbonamenti/biglietti/tariffe-extraurbano"
+"F","GTT Servizio Ferroviario","http://www.gtt.to.it/cms/percorari/ferrovie","Europe/Rome","it","800-019152","http://www.gtt.to.it/cms/biglietti-abbonamenti/biglietti/tariffe-ferrovie"
+"T","GTT Servizi Turistici","http://www.gtt.to.it/cms/turismo","Europe/Rome","it","800-019152",""
+"U","GTT Servizio Urbano","http://www.gtt.to.it/cms/percorari/urbano","Europe/Rome","it","800-019152","http://www.gtt.to.it/cms/biglietti-abbonamenti/biglietti/biglietti-carnet"

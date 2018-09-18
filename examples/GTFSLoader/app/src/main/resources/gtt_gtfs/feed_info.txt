@@ -1,0 +1,2 @@
+"feed_publisher_name","feed_publisher_url","feed_lang","feed_start_date","feed_end_date","feed_version"
+"Gruppo Torinese Trasporti S.p.A","http://www.gtt.to.it","it","20180412","20181231","20180413"

@@ -1,0 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gtfsloader-ing
+spec:
+  rules:
+  - host: my-trac.eu
+    http:
+      paths:
+      - path: /gtfsloader
+        backend:
+          serviceName: gtfsloader
+          servicePort: 4567
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gtfsloader
+  labels:
+    app: gtfsloader
+spec:
+  type: NodePort 
+  ports:
+  - name: "server"
+    port: 4567 
+  selector:
+    app: gtfsloader
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: gtfsloader
+  name: gtfsloader
+spec:
+  serviceName: gtfsloader
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: gtfsloader
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_HOST
+          value: mysql-0.mysql.default.svc.cluster.local 
+        - name: KAFKA_CONNECT_HOST
+          value: cigo-kafka-connect.default.svc.cluster.local
+        - name: ELASTIC_TOPICS
+          value: "cigo-jdbc-trips, cigo-jdbc-stops,cigo-jdbc-routes,cigo-jdbc-stop_times,cigo-jdbc-calendar_dates,cigo-jdbc-calendar,cigo-jdbc-frequencies,cigo-jdbc-transfers,cigo-jdbc-agency,cigo-jdbc-cigo-jdbc-feed_info,cigo-jdbc-shapes"
+        image: sparsitytechnologies/gtfsloader:latest
+        name: gtfsloader 
+        ports:
+        - containerPort: 4567
+      restartPolicy: Always
