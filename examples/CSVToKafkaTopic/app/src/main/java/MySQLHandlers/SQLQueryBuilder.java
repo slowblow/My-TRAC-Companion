@@ -6,7 +6,7 @@ public class SQLQueryBuilder {
     {
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS "+name+"(");
         sb.append("id serial NOT NULL PRIMARY KEY,\n");
-        sb.append("modified timestamp default CURRENT_TIMESTAMP NOT NULL,");
+//        sb.append("modified timestamp default CURRENT_TIMESTAMP NOT NULL,");
         sb.append("user_id INTEGER,");
         sb.append("activity_id INTEGER,");
         sb.append("rating DOUBLE");
