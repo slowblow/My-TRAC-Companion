@@ -17,6 +17,7 @@ import java.util.List;
 import java.io.*;
 import java.nio.file.*;
 
+import static java.lang.Thread.sleep;
 import static spark.Spark.*;
 
 
@@ -25,10 +26,10 @@ public class CSVToKafkaTopic {
     public static class Arguments {
 
 
-        @Parameter(names = {"-db", "--database"}, description = "Database name", required = true)
+        @Parameter(names = {"-db", "--database"}, description = "Database name", required = false)
         public String database;
 
-        @Parameter(names = {"-ip", "--ip"}, description = "MySQL server ip", required = true)
+        @Parameter(names = {"-ip", "--ip"}, description = "MySQL server ip", required = false)
         public String ip;
 
         @Parameter(names = {"-u", "--user","--username"}, description = "DB username", required = false)
@@ -86,13 +87,18 @@ public class CSVToKafkaTopic {
                 Thread.sleep(1000);
             }
         }
+
         System.out.println("Connection to MYSQL established");
 
 
         get("/", (req, res) ->
                 "<form method='post' enctype='multipart/form-data'>" // note the enctype
                         + "    <input type='file' name='uploaded_file' accept='.csv'><br>"
-                        + "    <input type='text' name='topic_name' value='Choose topic name'><br><br>"// make sure to call getPart using the same "name" in the post
+                        + "    <input type='text' name='topic_name' value='Choose topic name'>         "// make sure to call getPart using the same "name" in the post
+                        + "<select name='selected_option'>\n"
+                        +"  <option value=\"stream\" selected>Stream</option>\n"
+                        +"  <option value=\"bulk\">Bulk</option>\n"
+                        +"</select><br><br>"
                         + "                                         <button>Upload CSV</button>"
                         + "</form>"
         );
@@ -105,6 +111,15 @@ public class CSVToKafkaTopic {
 
             String rawFilename="";
             String topicName=req.queryParams("topic_name");
+            String selectedOption = req.queryParams("selected_option");
+
+            if (selectedOption.equals("stream")) {
+                timer = 10000;
+            }
+            else {
+                timer = 0;
+            }
+
             try (InputStream input = req.raw().getPart("uploaded_file").getInputStream()) { // getPart needs to use same "name" as input field in form
                 Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING);
                 rawFilename=getFileName(req.raw().getPart("uploaded_file"));
@@ -117,7 +132,7 @@ public class CSVToKafkaTopic {
             }
 
 
-            System.out.println("File name: "+ rawFilename+", topic name: "+ topicName);
+            System.out.println("File name: "+ rawFilename+" will be "+selectedOption+"ed ; topic name: "+ topicName );
 
 
             File f = tempFile.toFile();
@@ -140,8 +155,8 @@ public class CSVToKafkaTopic {
         return null;
     }
 
-
-    private static String processFile(String topicName, String filename) throws IOException, SQLException {
+static long timer;
+    private static String processFile(String topicName, String filename) throws IOException, SQLException, InterruptedException {
 
         System.out.println("File: "+filename);
 
@@ -172,6 +187,7 @@ public class CSVToKafkaTopic {
                     System.out.println("Error in "+ insert);
                     errors.append(insert+"<br>");
                 }
+                sleep(timer);
         }
         if(!errors.toString().isEmpty()) result.append("<br><br>Errors:<br>").append(errors);
         return result.toString();
