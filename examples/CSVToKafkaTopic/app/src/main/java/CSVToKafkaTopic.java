@@ -138,8 +138,6 @@ public class CSVToKafkaTopic {
             File f = tempFile.toFile();
 
             String result = processFile(topicName,f.getAbsolutePath());
-
-
             Files.delete(tempFile);
             return "<h1>Results:</h1>"+result;
         });
