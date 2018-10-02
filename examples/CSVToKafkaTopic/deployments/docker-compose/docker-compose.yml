@@ -22,7 +22,6 @@ services:
             MYSQL_PASSWORD: confluent
             MYSQL_DATABASE: connect_test
 networks:
-networks:
     default:
         external:
             name: cigo-compose_default
