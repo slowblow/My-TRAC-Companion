@@ -1,13 +1,9 @@
 #!/bin/bash
 
 
-export path=`pwd`
-
-
-cd $1
-./start.sh 
+if [[ "$OSTYPE" == darwin ]]
+then
 eval $(docker-machine env cigo)                                                                                                       
-cd $path 
-
+fi
 
 docker-compose up -d
