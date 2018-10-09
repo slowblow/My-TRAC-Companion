@@ -6,5 +6,5 @@ eval $(docker-machine env cigo)
 fi
 
 docker-compose stop
-docker-compose rm
+docker-compose rm --force
 
