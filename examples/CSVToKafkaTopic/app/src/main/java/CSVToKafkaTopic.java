@@ -66,10 +66,16 @@ public class CSVToKafkaTopic {
         Arguments arguments = new Arguments();
 
         JCommander.newBuilder().addObject(arguments).build().parse(args);
-        String ip= arguments.ip;
+        /*String ip= arguments.ip;
         String database = arguments.database;
         String user = arguments.user;
-        String pw = arguments.pw;
+        String pw = arguments.pw;*/
+
+        String ip= "192.168.99.100:6565";
+        String database = "connect_test";
+        String user = "confluent";
+        String pw = "confluent";
+
 
         System.out.println(
                 "ip: "+ip+"\n"+
@@ -114,7 +120,7 @@ public class CSVToKafkaTopic {
             String selectedOption = req.queryParams("selected_option");
 
             if (selectedOption.equals("stream")) {
-                timer = 10000;
+                timer = 5000;
             }
             else {
                 timer = 0;
