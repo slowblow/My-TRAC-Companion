@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class SQLConnection {
 
-    public static Connection getConnection(String ip, String database, String user, String pw) {
+    public static Connection getConnection(String ip, String database, String user, String pw) throws InterruptedException {
 
         System.out.println("-------- MySQL JDBC Connection Testing ------------");
         Connection connection = null;
@@ -18,25 +18,22 @@ public class SQLConnection {
             e.printStackTrace();
             return connection;
         }
-
         System.out.println("MySQL JDBC Driver Registered!");
 
-        try {
-            String url = "jdbc:mysql://"+ip+"/"+database+","+user+","+pw;
-            connection = DriverManager
-                    .getConnection("jdbc:mysql://"+ip+"/"+database,user, pw);
+        while(connection == null) {
+            try {
+                String url = "jdbc:mysql://"+ip+"/"+database+","+user+","+pw;
+                connection = DriverManager
+                        .getConnection("jdbc:mysql://"+ip+"/"+database,user, pw);
 
-        } catch (SQLException e) {
-            System.out.println("Connection Failed! Check output console");
-            e.printStackTrace();
-            return connection;
+            } catch (SQLException e) {
+                System.out.println("Connection Failed! Check output console");
+                e.printStackTrace();
+                Thread.sleep(1000);
+            }
         }
 
-        if (connection != null) {
-            System.out.println("You made it, take control your database now!");
-        } else {
-            System.out.println("Failed to make connection!");
-        }
+        System.out.println("You made it, take control your database now!");
         return connection;
     }
 }

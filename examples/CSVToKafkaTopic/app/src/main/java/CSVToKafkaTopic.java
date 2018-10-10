@@ -1,8 +1,11 @@
-import FileHandlers.LoadFile;
+import FileHandlers.FileDriver;
+import MySQLHandlers.MySQLDriver;
 import MySQLHandlers.SQLConnection;
-import MySQLHandlers.SQLQueryBuilder;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import org.apache.commons.lang3.tuple.Pair;
+import spark.Request;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.http.Part;
@@ -12,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import java.io.*;
 import java.nio.file.*;
@@ -21,8 +23,16 @@ import static java.lang.Thread.sleep;
 import static spark.Spark.*;
 
 
+/*
+ * This app creates an API REST to upload a CSV File. Then, the CSV file is processed
+ * and it's content is upload into a remote MySQL Database.
+ */
+
+
 public class CSVToKafkaTopic {
 
+
+    //THIS PART OF THE CODE HELPS HANDLING THE ARGUMENTS REQUIRED BY THE APPLICATION
     public static class Arguments {
 
 
@@ -52,148 +62,100 @@ public class CSVToKafkaTopic {
     }
 
 
+
+    private static final String uploadDirPath="upload";
+    private static File uploadDir;
+    static long timer;
+
+
+    /* This code represents a form with
+        - uploaded_file, a field to be filled with the file to be uploaded
+        - tipic_name, a text field which indicates to which topic the file belongs to
+        - selected_option, a two option selecto to choose between a bulk/stream way of uploading the file
+     */
+    static String web_page_code="<form method='post' enctype='multipart/form-data'>" // note the enctype
+            + "    <input type='file' name='uploaded_file' accept='.csv'><br>"
+            + "    <input type='text' name='topic_name' value='Choose topic name'>         "// make sure to call getPart using the same "name" in the post
+            + "<select name='selected_option'>\n"
+            +"  <option value=\"stream\" selected>Stream</option>\n"
+            +"  <option value=\"bulk\">Bulk</option>\n"
+            +"</select><br><br>"
+            + "                                         <button>Upload CSV</button>"
+            + "</form>";
+
+
+    private static void prepare() {
+        port(4568);
+        uploadDir = new File(uploadDirPath);
+        uploadDir.mkdir(); // create the upload directory if it doesn't exist
+        staticFiles.externalLocation(uploadDirPath);
+    }
+
     static    Connection connection = null;
+
+    static Arguments arguments = new Arguments();
     public static void main (String[] args) throws IOException, InterruptedException {
 
-
-        port(4568);
-        File uploadDir = new File("upload");
-        uploadDir.mkdir(); // create the upload directory if it doesn't exist
-
-        staticFiles.externalLocation("upload");
-
-
-        Arguments arguments = new Arguments();
-
+        //Handle the program arguments
         JCommander.newBuilder().addObject(arguments).build().parse(args);
-        /*String ip= arguments.ip;
-        String database = arguments.database;
-        String user = arguments.user;
-        String pw = arguments.pw;*/
 
-        String ip= "192.168.99.100:6565";
-        String database = "connect_test";
-        String user = "confluent";
-        String pw = "confluent";
+        //Function to prepare the system to receive the files to be uploaded.
+        prepare();
 
 
-        System.out.println(
-                "ip: "+ip+"\n"+
-                        "database: "+database+"\n"+
-                        "user: "+user+"\n"+
-                        "pw: "+pw+"\n"
-        );
-
-
-       while(connection == null) {
-            try{
-                connection = SQLConnection.getConnection(ip,database,user,pw);
-            } catch(Exception e) {
-                e.printStackTrace();
-                Thread.sleep(1000);
-            }
-        }
-
-        System.out.println("Connection to MYSQL established");
-
-
+        // It creates a "web page" to upload a file (get) and then it handles it (post)
         get("/", (req, res) ->
-                "<form method='post' enctype='multipart/form-data'>" // note the enctype
-                        + "    <input type='file' name='uploaded_file' accept='.csv'><br>"
-                        + "    <input type='text' name='topic_name' value='Choose topic name'>         "// make sure to call getPart using the same "name" in the post
-                        + "<select name='selected_option'>\n"
-                        +"  <option value=\"stream\" selected>Stream</option>\n"
-                        +"  <option value=\"bulk\">Bulk</option>\n"
-                        +"</select><br><br>"
-                        + "                                         <button>Upload CSV</button>"
-                        + "</form>"
+               web_page_code
         );
 
         post("/", (req, res) -> {
-
-            Path tempFile = Files.createTempFile(uploadDir.toPath(), "", "");
-
-            req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
-
-            String rawFilename="";
-            String topicName=req.queryParams("topic_name");
-            String selectedOption = req.queryParams("selected_option");
-
-            if (selectedOption.equals("stream")) {
-                timer = 5000;
-            }
-            else {
-                timer = 0;
-            }
-
-            try (InputStream input = req.raw().getPart("uploaded_file").getInputStream()) { // getPart needs to use same "name" as input field in form
-                Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                rawFilename=getFileName(req.raw().getPart("uploaded_file"));
-            }
-
-            catch (Exception e )
-            {
-                e.printStackTrace();
-                System.out.println(e.getMessage());
-            }
-
-
-            System.out.println("File name: "+ rawFilename+" will be "+selectedOption+"ed ; topic name: "+ topicName );
-
-
-            File f = tempFile.toFile();
-
-            String result = processFile(topicName,f.getAbsolutePath());
-            Files.delete(tempFile);
-            return "<h1>Results:</h1>"+result;
+            String result = handleFile(req);
+            return result;
         });
 
     }
 
-    private static String getFileName(Part part) {
-        for (String cd : part.getHeader("content-disposition").split(";")) {
-            if (cd.trim().startsWith("filename")) {
-                return cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");
-            }
+    private static String handleFile(Request req) throws IOException, SQLException, InterruptedException {
+
+
+
+        Path pathToFile = Files.createTempFile(uploadDir.toPath(), "", "");
+        String rawFilename= FileDriver.getFileName(pathToFile,req);
+        String topicName=req.queryParams("topic_name");
+        String selectedOption = req.queryParams("selected_option");
+        timer = selectedOption.equals("stream")?5000:0;
+
+       /* if (selectedOption.equals("stream")) {
+            timer = 5000;
         }
-        return null;
+        else {
+            timer = 0;
+        }*/
+
+        System.out.println("File name: "+ rawFilename+" will be "+selectedOption+"ed ; topic name: "+ topicName );
+
+
+        File f = pathToFile.toFile();
+        String result = writeFileContentToMySQL(topicName,f.getAbsolutePath());
+        Files.delete(pathToFile);
+        return "<h1>Results:</h1>"+result;
     }
 
-static long timer;
-    private static String processFile(String topicName, String filename) throws IOException, SQLException, InterruptedException {
 
-        System.out.println("File: "+filename);
+    private static String writeFileContentToMySQL(String topicName, String filename) throws IOException, SQLException, InterruptedException {
 
-
-        System.out.println("Table name: "+topicName);
-        List<String[]> records = LoadFile.load(filename);
-        String createTable = SQLQueryBuilder.createTable(topicName); //We will need to extend that to create a table based on the registered schema
-
-        System.out.println(createTable);
-
-        Statement statement = connection.createStatement();
-        statement.executeUpdate(createTable);
-
-        StringBuilder result = new StringBuilder("Table:<br>"+createTable.replace("\n","<br>")+"<br><br>Inserts:<br>");
-        StringBuilder errors = new StringBuilder();
-
-        String header= "(user_id, activity_id, rating)";
+        //Connect with the database
+        connection = SQLConnection.getConnection(arguments.ip,arguments.database,arguments.user,arguments.pw);
+        System.out.println("Connection to MYSQL established");
 
 
-        for(String[] record : records) {
-                String insert = SQLQueryBuilder.insert(topicName, header , record); //We will need to extend that to adapt the inser to the table previously created
-                try {
-                    statement.executeUpdate(insert);
-                    result.append(insert+"<br>");
-                }
-                catch (Exception e)
-                {
-                    System.out.println("Error in "+ insert);
-                    errors.append(insert+"<br>");
-                }
-                sleep(timer);
-        }
-        if(!errors.toString().isEmpty()) result.append("<br><br>Errors:<br>").append(errors);
-        return result.toString();
+
+        String createdTable = MySQLDriver.createTable(connection,topicName);
+        String InsertsErrors= MySQLDriver.insertFileContent(connection,filename,topicName,timer);
+
+
+        return "Table:<br>"+createdTable+"<br><br>"+InsertsErrors;
+
+
     }
 }

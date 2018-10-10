@@ -3,12 +3,14 @@ services:
     mysql_csvtokafkatopic:
         image: mysql:5.5.59
         container_name: mysql_csvtokafkatopic
+        ports:
+            - "3306:6565"
         environment:
             MYSQL_ROOT_PASSWORD: confluent
             MYSQL_USER: confluent
             MYSQL_PASSWORD: confluent
             MYSQL_DATABASE: connect_test
-            #        depends_on:
+
     csvtokafkatopic:
         image: sparsitytechnologies/csvtokafkatopic:latest
         container_name: csvtokafkatopic
