@@ -108,6 +108,7 @@ public class CSVToKafkaTopic {
                web_page_code
         );
 
+        //It handles the uploaded file
         post("/", (req, res) -> {
             String result = handleFile(req);
             return result;
@@ -116,33 +117,32 @@ public class CSVToKafkaTopic {
     }
 
     private static String handleFile(Request req) throws IOException, SQLException, InterruptedException {
-
-
-
         Path pathToFile = Files.createTempFile(uploadDir.toPath(), "", "");
+
+        //Retrive filename
         String rawFilename= FileDriver.getFileName(pathToFile,req);
+
+        //Retrieve topicName
         String topicName=req.queryParams("topic_name");
+
+        //Retrive uploaded mode: either bulk o stream
         String selectedOption = req.queryParams("selected_option");
         timer = selectedOption.equals("stream")?5000:0;
 
-       /* if (selectedOption.equals("stream")) {
-            timer = 5000;
-        }
-        else {
-            timer = 0;
-        }*/
 
         System.out.println("File name: "+ rawFilename+" will be "+selectedOption+"ed ; topic name: "+ topicName );
 
 
         File f = pathToFile.toFile();
+
         String result = writeFileContentToMySQL(topicName,f.getAbsolutePath());
         Files.delete(pathToFile);
         return "<h1>Results:</h1>"+result;
     }
 
 
-    private static String writeFileContentToMySQL(String topicName, String filename) throws IOException, SQLException, InterruptedException {
+    //Writes the content of the file into a table called tableName of the database
+    private static String writeFileContentToMySQL(String tableName, String filename) throws IOException, InterruptedException {
 
         //Connect with the database
         connection = SQLConnection.getConnection(arguments.ip,arguments.database,arguments.user,arguments.pw);
@@ -150,8 +150,11 @@ public class CSVToKafkaTopic {
 
 
 
-        String createdTable = MySQLDriver.createTable(connection,topicName);
-        String InsertsErrors= MySQLDriver.insertFileContent(connection,filename,topicName,timer);
+        //Creates the table
+        String createdTable = MySQLDriver.createTable(connection,tableName);
+
+        //Insert records into the table
+        String InsertsErrors= MySQLDriver.insertFileContent(connection,filename,tableName,timer);
 
 
         return "Table:<br>"+createdTable+"<br><br>"+InsertsErrors;

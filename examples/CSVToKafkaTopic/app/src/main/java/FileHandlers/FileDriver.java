@@ -19,7 +19,8 @@ import java.util.Scanner;
 
 public class FileDriver {
 
-    public static List<String[]> load(String file) throws IOException
+    //Reads the content of a CSV file.
+    public static List<String[]> read(String file) throws IOException
     {
         Reader reader = Files.newBufferedReader(Paths.get(file));
         CSVReader csvReader = new CSVReader(reader);
@@ -27,6 +28,7 @@ public class FileDriver {
         return csvReader.readAll();
     }
 
+    //Gets the filename from a path a and a request.
     public static String getFileName(Path file , Request req) {
         req.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/temp"));
         try (InputStream input = req.raw().getPart("uploaded_file").getInputStream()) { // getPart needs to use same "name" as input field in form
