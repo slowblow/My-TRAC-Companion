@@ -119,7 +119,7 @@ public class CSVToKafkaTopic {
 
         //Retrive uploaded mode: either bulk o stream
         String selectedOption = req.queryParams("selected_option");
-        timer = selectedOption.equals("stream")?5000:0;
+        timer = selectedOption.equals("stream")?1000:0;
 
 
         System.out.println("File name: "+ rawFilename+" will be "+selectedOption+"ed ; topic name: "+ topicName );
