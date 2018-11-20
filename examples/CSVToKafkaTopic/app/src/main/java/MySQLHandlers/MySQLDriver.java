@@ -1,6 +1,7 @@
 package MySQLHandlers;
 
 import FileHandlers.FileDriver;
+import Objects.Schema;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -14,9 +15,9 @@ import static java.lang.Thread.sleep;
 
 public class MySQLDriver {
 
-    //Create a table called tableName
-    public static String createTable(Connection connection, String tableName) {
-        String createTable = SQLQueryBuilder.createTable(tableName); //We will need to extend that to create a table based on the registered schema
+    //Create a table called following the defined schema
+    public static String createTable(Connection connection, Schema schema) {
+        String createTable = SQLQueryBuilder.createTable(schema);
         try{
             Statement statement = connection.createStatement();
             statement.executeUpdate(createTable);
@@ -27,6 +28,7 @@ public class MySQLDriver {
             return ("ERROR in SQL query: " + createTable);
         }
     }
+
 
     //Insert a record into the table tableName  with the form tableAttributes.
     public static Pair<String, String> Insert(Connection connection, String tableName, String tableAttributes, String[] record) {
@@ -47,24 +49,43 @@ public class MySQLDriver {
         }
     }
 
+
+
     //Insert teh content of a file, into  tableName. timer ms is the time between insertions.
-    public static String insertFileContent(Connection connection, String filename, String tableName, long timer) throws InterruptedException, IOException {
-        StringBuilder inserts = new StringBuilder("Inserts:<br>");
+    public static String insertFileContent(Connection connection, String filename, Schema schema, long timer) throws InterruptedException, IOException {
+        StringBuilder inserts = new StringBuilder("");
         StringBuilder errors = new StringBuilder("");
 
-        String tableAttributes= "(user_id, activity_id, rating)";
 
-        Pair<StringBuilder,StringBuilder> InsertsErrors= new ImmutablePair<StringBuilder,StringBuilder>(inserts,errors);
+        String tableName=schema.getName();
+
+        boolean first = true;
+        StringBuilder tableAttributes = new StringBuilder();
+        tableAttributes.append("(");
+
+        for (Schema.Field field : schema.getFields())
+        {
+            String attribute_name = field.getName();
+
+            if(!first) tableAttributes.append(",");
+            tableAttributes.append(" "+attribute_name);
+
+            first=false;
+        }
+        tableAttributes.append(")");
+
 
         List<String[]> records = FileDriver.read(filename);
         for(String[] record : records) {
 
-            Pair<String, String> InsertError = MySQLDriver.Insert(connection,tableName,tableAttributes,record);
+            Pair<String, String> InsertError = MySQLDriver.Insert(connection,tableName,tableAttributes.toString(),record);
+            inserts.append(InsertError.getLeft());
+            errors.append(InsertError.getRight());
 
             sleep(timer);
         }
 
-        return errors.length()==0?inserts.toString():InsertsErrors.getKey().append("<br><br>Errors:<br>").append(InsertsErrors.getValue()).toString();
+        return errors.length()==0?"<br><br>Inserts:<br>"+inserts.toString():"<br><br>Inserts:<br>"+inserts.toString()+("<br><br>Errors:<br>")+errors.toString();
 
     }
 

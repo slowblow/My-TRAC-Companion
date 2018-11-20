@@ -1,16 +1,26 @@
 import FileHandlers.FileDriver;
 import MySQLHandlers.MySQLDriver;
 import MySQLHandlers.SQLConnection;
+import Objects.Schema;
+import Objects.Version;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import spark.Request;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static spark.Spark.*;
 
@@ -65,7 +75,10 @@ public class CSVToKafkaTopic {
         - tipic_name, a text field which indicates to which topic the file belongs to
         - selected_option, a two option selecto to choose between a bulk/stream way of uploading the file
      */
-    static String web_page_code="<form method='post' enctype='multipart/form-data'>" // note the enctype
+    static StringBuilder web_page_code= new StringBuilder();
+
+    /*
+    "<form method='post' enctype='multipart/form-data'>" // note the enctype
             + "    <input type='file' name='uploaded_file' accept='.csv'><br>"
             + "    <input type='text' name='topic_name' value='Choose topic name'>         "// make sure to call getPart using the same "name" in the post
             + "<select name='selected_option'>\n"
@@ -74,13 +87,95 @@ public class CSVToKafkaTopic {
             +"</select><br><br>"
             + "                                         <button>Upload CSV</button>"
             + "</form>";
+     */
 
 
-    private static void prepare() {
+    static Map<String,Schema> schemas = new HashMap<>();
+
+    private static void prepare() throws IOException {
+        //Set the application PORT
         port(4568);
+
+        //Prepare to receive files
         uploadDir = new File(uploadDirPath);
         uploadDir.mkdir(); // create the upload directory if it doesn't exist
         staticFiles.externalLocation(uploadDirPath);
+
+
+        //Access defined schemas
+        loadSchemasMap();
+
+        //Create web page code
+        buildHtml();
+
+    }
+
+    private static void buildHtml() {
+
+        web_page_code.append("<html lang=\"en\"><head>\n"
+                +"<link rel=\"stylesheet\" href=\"https://unpkg.com/purecss@1.0.0/build/pure-min.css\" integrity=\"sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w\" crossorigin=\"anonymous\"><form method='post' enctype='multipart/form-data'>"
+                +"</head><body>"// note the enctype
+                + "<br><br><input type='file' name='uploaded_file' accept='.csv'>\n<br><br>").append(getRollDownMany()).append(""
+                //+"<input type='text' name='topic_name' value='Choose topic name'>         "// make sure to call getPart using the same "name" in the post
+                + "Choose load mode: <select name='selected_option'>\n"
+                +"  <option value=\"stream\" selected>Stream</option>\n"
+                +"  <option value=\"bulk\">Bulk</option>\n"
+                +"</select><br><br>"
+                + "                                         <button>Upload CSV</button>"
+                + "</form>"
+                + "</body></html>");
+
+
+
+
+
+
+    }
+
+    private static String getRollDownMany() {
+
+        StringBuilder selectorCode  = new StringBuilder();
+
+        selectorCode.append("Choose topic: <select name='schema_name'>\n");
+        for(String schema_name: schemas.keySet())
+        {
+           // schema_name=schema_name.replaceAll("-value","");
+            selectorCode.append("<option value=\""+schema_name+ "\">"+schema_name+"</option>\n");
+        }
+        selectorCode.append("</select>\n<br><br>");
+        return selectorCode.toString();
+    }
+
+    private static void loadSchemasMap() throws IOException {
+        URL url = new URL("http://192.168.99.100:8081/subjects");
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
+            for (String line; (line = reader.readLine()) != null;) {
+                System.out.println(line);
+
+                //Gson gson = new Gson();
+                //String[] subjects = gson.fromJson(line,String[].class);
+
+                ObjectMapper mapper = new ObjectMapper();
+                String[] subjects = mapper.readValue(line,String[].class);
+
+
+                for(String schema_name : subjects) {
+                    System.out.println(schema_name);
+                    url = new URL("http://192.168.99.100:8081/subjects/" + schema_name + "/versions/latest");
+                    try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
+                        for (String versionString; (versionString = reader2.readLine()) != null;) {
+                            //System.out.println(versionString);
+                            Version version =mapper.readValue(versionString, Version.class);
+                            Schema schema1 = version.getSchema();
+                            schemas.put(schema_name.replace("-value","").replace("-key",""),version.getSchema());
+                        }
+                    }
+
+                }
+
+            }
+        }
     }
 
     static    Connection connection = null;
@@ -115,11 +210,15 @@ public class CSVToKafkaTopic {
         String rawFilename= FileDriver.getFileName(pathToFile,req);
 
         //Retrieve topicName
-        String topicName=req.queryParams("topic_name");
+        //String topicName=req.queryParams("topic_name");
 
         //Retrive uploaded mode: either bulk o stream
         String selectedOption = req.queryParams("selected_option");
         timer = selectedOption.equals("stream")?1000:0;
+
+        String topicName = req.queryParams("schema_name");
+
+
 
 
         System.out.println("File name: "+ rawFilename+" will be "+selectedOption+"ed ; topic name: "+ topicName );
@@ -127,26 +226,26 @@ public class CSVToKafkaTopic {
 
         File f = pathToFile.toFile();
 
-        String result = writeFileContentToMySQL(topicName,f.getAbsolutePath());
+        String result = writeFileContentToMySQL(schemas.get(topicName),f.getAbsolutePath());
         Files.delete(pathToFile);
         return "<h1>Results:</h1>"+result;
     }
 
 
     //Writes the content of the file into a table called tableName of the database
-    private static String writeFileContentToMySQL(String tableName, String filename) throws IOException, InterruptedException {
+    private static String writeFileContentToMySQL(Schema schema, String filename) throws IOException, InterruptedException {
 
         //Connect with the database
         connection = SQLConnection.getConnection(arguments.ip,arguments.database,arguments.user,arguments.pw);
         System.out.println("Connection to MYSQL established");
 
-
+        String tableName=schema.getName();
 
         //Creates the table
-        String createdTable = MySQLDriver.createTable(connection,tableName);
+        String createdTable = MySQLDriver.createTable(connection,schemas.get(tableName));
 
         //Insert records into the table
-        String InsertsErrors= MySQLDriver.insertFileContent(connection,filename,tableName,timer);
+        String InsertsErrors= MySQLDriver.insertFileContent(connection,filename,schemas.get(tableName),timer);
 
 
         return "Table:<br>"+createdTable+"<br><br>"+InsertsErrors;
