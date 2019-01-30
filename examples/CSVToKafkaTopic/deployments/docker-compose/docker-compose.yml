@@ -20,6 +20,7 @@ services:
             - mysql_csvtokafkatopic
         environment:
             KAFKA_CONNECT_HOST: kafka-connect
+            SCHEMA_REGISTRY_HOST: schema-registry
             MYSQL_HOST: mysql_csvtokafkatopic
             MYSQL_PASSWORD: confluent
             MYSQL_DATABASE: connect_test
