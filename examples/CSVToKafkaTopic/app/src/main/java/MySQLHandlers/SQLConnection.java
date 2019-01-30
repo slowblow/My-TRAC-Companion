@@ -9,6 +9,7 @@ public class SQLConnection {
     public static Connection getConnection(String ip, String database, String user, String pw) throws InterruptedException {
 
         System.out.println("-------- MySQL JDBC Connection Testing ------------");
+        System.out.println("Connecting to...jdbc:mysql://"+ip+"/"+database);
         Connection connection = null;
 
         try {

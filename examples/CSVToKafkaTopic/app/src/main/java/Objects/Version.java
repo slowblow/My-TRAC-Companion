@@ -38,8 +38,18 @@ public  class Version {
 
         if (this.schema_object!=null) return schema_object;
 
-        ObjectMapper mapper = new ObjectMapper();
-        this.schema_object=mapper.readValue(this.schema,Schema.class);
+        /*ObjectMapper mapper = new ObjectMapper();
+        this.schema_object=mapper.readValue(this.schema,Schema.class);*/
+
+       org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+
+      // this.schema = "{\"type\":\"record\",\"name\":\"ratings\",\"fields\":[{\"name\":\"id\",\"type\":[\"null\",\"long\"],\"default\":null},{\"name\":\"user_id\",\"type\":[\"null\",\"int\"],\"default\":null},{\"name\":\"activity_id\",\"type\":[\"null\",\"int\"],\"default\":null},{\"name\":\"rating\",\"type\":[\"null\",\"double\"],\"default\":null}],\"connect.name\":\"ratings\"}";
+       org.apache.avro.Schema parse = parser.parse(this.schema);
+
+       this.schema_object= Schema.getSchema (parse);
+
+
+
 
         return this.schema_object;
     }

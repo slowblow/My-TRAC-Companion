@@ -8,15 +8,16 @@ public class SQLQueryBuilder {
     public static String createTable(Schema schema) {
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS "+schema.getName()+"(");
 
-        boolean first=true;
+        boolean first = true;
+
 
         for(Schema.Field field : schema.getFields())
         {
-            if(!first)sb.append(",\n");
-            first=false;
+            if (!first) sb.append(",\n");
 
             String sql_sentence = buildFieldDescriptor(field);
             sb.append(sql_sentence);
+            first=false;
         }
         sb.append(")");
 
@@ -27,11 +28,14 @@ public class SQLQueryBuilder {
 
     private static String buildFieldDescriptor(Schema.Field field) {
         String field_name = field.getName();
+        if(field_name.equals("id")) return "id serial NOT NULL PRIMARY KEY";
         String type = field.getType();
 
         String mysqlType = convertToMysqlType(type);
 
-        return field_name+" "+mysqlType;
+        String query =  field_name+" "+mysqlType;
+
+        return query;
     }
 
     private static String convertToMysqlType(String type) {

@@ -54,6 +54,8 @@ public class CSVToKafkaTopic {
         @Parameter(names={"-f","--file"}, description="Full path to the GTFS file to be loaded", required= false)
         public String filename="";
 
+        @Parameter(names={"-sr","--schemaregistry","--schema-registry"}, description="Schema registry ip", required= false)
+        public String schemaregistry="";
 
         @Parameter(names={"-F","--folder"}, description="Full path to the folder containing the GTFS files to be loaded", required= false)
         public String folderName="";
@@ -147,34 +149,54 @@ public class CSVToKafkaTopic {
     }
 
     private static void loadSchemasMap() throws IOException {
-        URL url = new URL("http://192.168.99.100:8081/subjects");
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
-            for (String line; (line = reader.readLine()) != null;) {
-                System.out.println(line);
-
-                //Gson gson = new Gson();
-                //String[] subjects = gson.fromJson(line,String[].class);
-
-                ObjectMapper mapper = new ObjectMapper();
-                String[] subjects = mapper.readValue(line,String[].class);
+        System.out.println("Getting schema from http://"+arguments.schemaregistry+":8081/subjects");
 
 
-                for(String schema_name : subjects) {
-                    System.out.println(schema_name);
-                    url = new URL("http://192.168.99.100:8081/subjects/" + schema_name + "/versions/latest");
-                    try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
-                        for (String versionString; (versionString = reader2.readLine()) != null;) {
-                            //System.out.println(versionString);
-                            Version version =mapper.readValue(versionString, Version.class);
-                            Schema schema1 = version.getSchema();
-                            schemas.put(schema_name.replace("-value","").replace("-key",""),version.getSchema());
+
+        try {
+            URL url = new URL("http://" + arguments.schemaregistry + ":8081/subjects");
+
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
+                for (String line; (line = reader.readLine()) != null; ) {
+                    System.out.println(line);
+
+                    //Gson gson = new Gson();
+                    //String[] subjects = gson.fromJson(line,String[].class);
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    String[] subjects = mapper.readValue(line, String[].class);
+
+
+                    for (String schema_name : subjects) {
+                        System.out.println(schema_name);
+                        url = new URL("http://"+arguments.schemaregistry + ":8081/subjects/" + schema_name + "/versions/latest");
+                        try (BufferedReader reader2 = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
+                            for (String versionString; (versionString = reader2.readLine()) != null; ) {
+                                //System.out.println(versionString);
+
+                                //org.apache.avro.Schema.Parser parser = new org.apache.avro.Schema.Parser();
+                                //org.apache.avro.Schema parse = parser.parse(versionString);
+
+
+
+
+                                Version version = mapper.readValue(versionString, Version.class);
+                                Schema schema1 = version.getSchema();
+                                schemas.put(schema1.getName(), schema1);
+                            }
                         }
+
                     }
 
                 }
-
             }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            //while(true){}
         }
     }
 
@@ -243,6 +265,7 @@ public class CSVToKafkaTopic {
 
         //Creates the table
         String createdTable = MySQLDriver.createTable(connection,schemas.get(tableName));
+        System.out.println(createdTable);
 
         //Insert records into the table
         String InsertsErrors= MySQLDriver.insertFileContent(connection,filename,schemas.get(tableName),timer);

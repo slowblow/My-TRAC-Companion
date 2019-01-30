@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import static java.lang.Thread.getAllStackTraces;
 import static java.lang.Thread.sleep;
 
 public class MySQLDriver {
@@ -28,7 +29,6 @@ public class MySQLDriver {
             return ("ERROR in SQL query: " + createTable);
         }
     }
-
 
     //Insert a record into the table tableName  with the form tableAttributes.
     public static Pair<String, String> Insert(Connection connection, String tableName, String tableAttributes, String[] record) {
@@ -49,9 +49,7 @@ public class MySQLDriver {
         }
     }
 
-
-
-    //Insert teh content of a file, into  tableName. timer ms is the time between insertions.
+    //Insert the content of a file, into  tableName. timer ms is the time between insertions.
     public static String insertFileContent(Connection connection, String filename, Schema schema, long timer) throws InterruptedException, IOException {
         StringBuilder inserts = new StringBuilder("");
         StringBuilder errors = new StringBuilder("");
@@ -66,6 +64,7 @@ public class MySQLDriver {
         for (Schema.Field field : schema.getFields())
         {
             String attribute_name = field.getName();
+            if(attribute_name.equals("id")) continue;
 
             if(!first) tableAttributes.append(",");
             tableAttributes.append(" "+attribute_name);
