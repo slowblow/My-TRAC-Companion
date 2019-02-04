@@ -3,14 +3,9 @@ kind: Ingress
 metadata:
   name: csvtokafkatopic-ing
 spec:
-  rules:
-  - host: my-trac.eu
-    http:
-      paths:
-      - path: /csvtokafkatopic
-        backend:
-          serviceName: csvtokafkatopic
-          servicePort: 4568
+  backend:
+    serviceName: csvtokafkatopic
+    servicePort: 4568
 ---           
 apiVersion: v1
 kind: Service
