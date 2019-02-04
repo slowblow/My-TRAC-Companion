@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-csvtokafkatopic
+  labels:
+    app: mysql-csvtokafkatopic
+spec:
+  #type: LoadBalancer 
+  ports:
+  - name: "server"
+    port: 3306
+    targetPort: 6565 
+  clusterIP: None
+  selector:
+    app: mysql-csvtokafkatopic 
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: mysql-csvtokafkatopic
+  name: mysql-csvtokafkatopic
+spec:
+  serviceName: mysql-csvtokafkatopic
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql-csvtokafkatopic
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: confluent
+        - name: MYSQL_USER
+          value: confluent
+        - name: MYSQL_PASSWORD
+          value: confluent
+        - name: MYSQL_DATABASE
+          value: connect_test
+        image: mysql:5.5.59
+        name: mysql-csvtokafkatopic 
+        ports:
+        - containerPort: 6565
+      restartPolicy: Always

@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: csvtokafkatopic-ing
+spec:
+  rules:
+  - host: my-trac.eu
+    http:
+      paths:
+      - path: /csvtokafkatopic
+        backend:
+          serviceName: csvtokafkatopic
+          servicePort: 4568
+---           
+apiVersion: v1
+kind: Service
+metadata:
+  name: csvtokafkatopic
+  labels:
+    app: csvtokafkatopic
+spec:
+  type: NodePort  
+  ports:
+  - name: "server"
+    port: 4568
+  selector:
+    app: csvtokafkatopic
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: csvtokafkatopic
+  name: csvtokafkatopic
+spec:
+  serviceName: csvtokafkatopic
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csvtokafkatopic
+    spec:
+      containers:
+      - env:
+        - name: KAFKA_CONNECT_HOST
+          value: cigo-kafka-connect.default.svc.cluster.local
+        - name: SCHEMA_REGISTRY_HOST
+          value: cigo-schema-registry
+        - name: MYSQL_DATABASE
+          value: connect_test
+        - name: MYSQL_HOST
+          value: mysql-csvtokafkatopic
+        - name: MYSQL_PASSWORD
+          value: confluent
+        image: sparsitytechnologies/csvtokafkatopic:latest
+        name: csvtokafkatopic
+        ports:
+        - containerPort: 4568
+      restartPolicy: Always
