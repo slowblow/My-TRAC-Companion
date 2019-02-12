@@ -44,4 +44,16 @@ spec:
         name: mysql-csvtokafkatopic 
         ports:
         - containerPort: 6565
+        volumeMounts:
+          - name: data 
+            mountPath: /var/lib/mysql
       restartPolicy: Always
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: "standard"
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
