@@ -1,9 +1,8 @@
 FROM java:8-jre
 
-#COPY scripts  /usr/bin
 
 RUN apt-get update && \
-    apt-get install -y mysql-client
+    apt-get install -y mysql-client git
 
 
 COPY  CSVToKafkaTopic-1.0-SNAPSHOT-jar-with-dependencies.jar /opt/CSVToKafkaTopic/CSVToKafkaTopic-1.0-SNAPSHOT-jar-with-dependencies.jar

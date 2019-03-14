@@ -48,6 +48,7 @@ spec:
         - name: MYSQL_PASSWORD
           value: confluent
         image: sparsitytechnologies/csvtokafkatopic:latest
+        imagePullPolicy: Always
         name: csvtokafkatopic
         ports:
         - containerPort: 4568
