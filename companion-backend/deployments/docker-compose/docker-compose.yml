@@ -1,0 +1,137 @@
+version: "3"
+services:          
+    mysql-companion-backend:
+        image: mysql:5.7.23
+        # image: mysql:5.5.59 old breaks
+        container_name: mysql-companion-backend
+        environment:
+            MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+            MYSQL_DATABASE: $MYSQL_DATABASE
+        ports: 
+        - "$MYSQL_PORT:3306"
+        #without expose ports all communications between containers works
+
+    mongo-companion-backend:
+        image: mongo:4.0.9
+        container_name: mongo-companion-backend
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: $MONGO_INITDB_ROOT_USERNAME
+            MONGO_INITDB_ROOT_PASSWORD: $MONGO_INITDB_ROOT_PASSWORD
+        ports:
+        - "$MONGO_PORT:27017"
+
+    mytrac-ws-login:
+        image: sparsitytechnologies/mytrac-ws-login
+        container_name: mytrac-ws-login
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$LOGIN_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    firebase-container:
+        image: sparsitytechnologies/firebase-api
+        container_name: firebase-api
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$FIREBASE_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    tracking-container:
+        image: sparsitytechnologies/tracking-api
+        container_name: tracking-api
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$TRACKING_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    polls-container:
+        image: sparsitytechnologies/polls-api
+        container_name: polls-api
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$POLLS_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    ws-mytrac-activity:
+        image: sparsitytechnologies/ws-mytrac-activity
+        container_name: ws-mytrac-activity
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$ACTIVITY_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    ws-mytrac-register:
+        image: sparsitytechnologies/ws-mytrac-register
+        container_name: ws-mytrac-register
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$REGISTER_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    ws-mytrac-trip:
+        image: sparsitytechnologies/ws-mytrac-trip
+        container_name: ws-mytrac-trip
+        depends_on:
+            - mysql-companion-backend
+            - mongo-companion-backend
+        ports:
+            - "$TRIP_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    mytrac-webapp:
+        image: sparsitytechnologies/mytrac-webapp
+        container_name: mytrac-webapp
+        depends_on:
+            - mysql-companion-backend
+        ports:
+            - "$WEBAPP_PORT:8080"
+        environment:
+            BEEGO_RUNMODE: $BEEGO_RUNMODE
+        volumes:
+            - $DOCKER_COMPOSE_PATH/mytrac:/root/conf
+
+    companion-backend:
+        build: ../../app/docker-build/.
+        container_name: companion-backend
+        depends_on:
+            - mysql-companion-backend
+        environment:
+            KAFKA_CONNECT_HOST: kafka-connect
+            SCHEMA_REGISTRY_HOST_NAME: schema-registry
+            MYSQL_HOST: mysql-companion-backend
+            MYSQL_PASSWORD: $MYSQL_ROOT_PASSWORD
+            MYSQL_DATABASE: $MYSQL_DATABASE
+            MYSQL_USER: root
+            MYSQL_PORT: $MYSQL_PORT
+
+networks:
+    default:
+        external:
+            name: cigo-compose_default

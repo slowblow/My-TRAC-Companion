@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-companion-backend
+  labels:
+    app: mysql-companion-backend
+spec:
+  #type: LoadBalancer 
+  ports:
+  - name: "server"
+    port: 3306
+    targetPort: 6565 
+  clusterIP: None
+  selector:
+    app: mysql-companion-backend 
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: mysql-companion-backend
+  name: mysql-companion-backend
+spec:
+  serviceName: mysql-companion-backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql-companion-backend
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: confluent
+        - name: MYSQL_USER
+          value: confluent
+        - name: MYSQL_PASSWORD
+          value: confluent
+        - name: MYSQL_DATABASE
+          value: connect_test
+        image: mysql:5.7.23
+        name: mysql-companion-backend 
+        ports:
+        - containerPort: 6565
+        volumeMounts:
+          - name: data 
+            mountPath: /var/lib/mysql
+      restartPolicy: Always
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: "standard"
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
