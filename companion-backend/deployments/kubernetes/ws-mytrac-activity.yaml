@@ -1,0 +1,63 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: /home/maguila/gopath/src/github.com/kubernetes/kompose/kompose convert
+    kompose.version: 1.18.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: ws-mytrac-activity
+  name: ws-mytrac-activity
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: ws-mytrac-activity
+    spec:
+      containers:
+      - name: ws-mytrac-activity
+        image: sparsitytechnologies/ws-mytrac-activity
+        ports:
+          - containerPort: 8080
+        env:
+          - name: BEEGO_RUNMODE
+            value: "dev"
+        volumeMounts:
+        - name: deploy-conf
+          mountPath: /root/conf
+          readOnly: true
+      volumes:
+        - name: deploy-conf
+          secret:
+            secretName: deploy-conf
+      restartPolicy: Always
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: /home/maguila/gopath/src/github.com/kubernetes/kompose/kompose convert
+    kompose.version: 1.18.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: ws-mytrac-activity
+  name: ws-mytrac-activity
+spec:
+  type: NodePort
+  ports:
+  - name: activity-server
+    port: 8080
+    #targetPort: 8080
+  selector:
+    io.kompose.service: ws-mytrac-activity
+status:
+  loadBalancer: {}
+
+

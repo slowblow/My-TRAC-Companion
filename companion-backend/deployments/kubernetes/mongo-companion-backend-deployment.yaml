@@ -6,8 +6,8 @@ metadata:
     kompose.version: 1.18.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: mysql-companion-backend
-  name: mysql-companion-backend
+    io.kompose.service: mongo-companion-backend
+  name: mongo-companion-backend
 spec:
   replicas: 1
   strategy: {}
@@ -15,18 +15,18 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        io.kompose.service: mysql-companion-backend
+        io.kompose.service: mongo-companion-backend
     spec:
       containers:
       - env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "1234"
-        - name: MYSQL_DATABASE
-          value: "mytrac"
-        image: mysql:5.7.23
-        name: mysql-companion-backend
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "mongouser"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: "mongopass"
+        image: mongo:4.0.9
+        name: mongo-companion-backend
         ports:
-        - containerPort: 3306
+        - containerPort: 27017
         resources: {}
       restartPolicy: Always
 status: {}
@@ -41,18 +41,17 @@ metadata:
     kompose.version: 1.18.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: mysql-companion-backend
-  name: mysql-companion-backend
+    io.kompose.service: mongo-companion-backend
+  name: mongo-companion-backend
 spec:
   type: NodePort
   ports:
-  - name: "3306"
-    port: 3306
-    targetPort: 3306
+  - name: "27017"
+    port: 27017
+    targetPort: 27017
   selector:
-    io.kompose.service: mysql-companion-backend
+    io.kompose.service: mongo-companion-backend
 status:
   loadBalancer: {}
-
 
 

@@ -1,0 +1,77 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: /home/maguila/gopath/src/github.com/kubernetes/kompose/kompose convert
+    kompose.version: 1.18.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: tracking-container
+  name: tracking-container
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: tracking-container
+    spec:
+      containers:
+      - name: tracking-container
+        image: sparsitytechnologies/tracking-api
+        ports:
+          - containerPort: 8080
+        env:
+          - name: BEEGO_RUNMODE
+            value: "dev"
+        volumeMounts:
+        - name: deploy-conf
+          mountPath: /root/conf
+          readOnly: true
+      volumes:
+        - name: deploy-conf
+          secret:
+            secretName: deploy-conf
+      #volumes:
+      #- name: mytrac-conf
+        #hostPath:
+          # directory location on host
+          #path: /home/maguila/gopath/src/bitbucket.org/sparsitytechnologies/My-TRAC/My-TRAC-Companion/companion-backend/deployments/docker-compose/mytrac
+          # this field is optional
+          #type: Directory
+        #volumeMounts:
+        #  - name: deploy-conf
+        #    mountPath: /root/conf
+        #    readOnly: true
+      restartPolicy: Always
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: /home/maguila/gopath/src/github.com/kubernetes/kompose/kompose convert
+    kompose.version: 1.18.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: tracking-container
+  name: tracking-container
+spec:
+  type: NodePort
+  ports:
+  - name: tracking-server
+    port: 8080
+    #targetPort: 8080
+    nodePort: 31317 #puerto que expone minikube 30000-32767, si no se pone define uno random
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    io.kompose.service: tracking-container
+status:
+  loadBalancer: {}
+
+
