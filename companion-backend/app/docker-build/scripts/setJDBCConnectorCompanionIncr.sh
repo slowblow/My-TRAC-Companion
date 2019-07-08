@@ -25,12 +25,15 @@ CONNECTOR="{
 \"tasks.max\": 1,
 \"connection.url\": \"jdbc:mysql://$MYSQL_HOST:$MYSQL_PORT/$MYSQL_DATABASE?user=$MYSQL_USER&password=$MYSQL_PASSWORD\", 
 \"mode\": \"incrementing\", 
-\"incrementing.column.name\": \"$3\", 
-\"timestamp.column.name\": \"modified\", 
+\"incrementing.column.name\": \"$3\",
 \"topic.prefix\": \"$2\", 
 \"poll.interval.ms\": 1000,
+\"validate.non.null\":false,
 \"query\":\"$4\" } 
 }"
+
+#\"timestamp.column.name\":\"$4\",
+#\"timestamp.delay.interval.ms\":1000,
 
 
 
