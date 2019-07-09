@@ -1,0 +1,61 @@
+#apiVersion: extensions/v1beta1
+#kind: Ingress
+#metadata:
+#  name: companion-backend-ing
+#spec:
+#  backend:
+#    serviceName: companion-backend
+#    servicePort: 4444
+#--- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: companion-backend
+  labels:
+    app: companion-backend
+spec:
+  type: NodePort 
+  ports:
+  - name: "server"
+    port: 4444
+  selector:
+    app: companion-backend
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: companion-backend
+  name: companion-backend
+spec:
+  serviceName: companion-backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: companion-backend
+    spec:
+      containers:
+      - env:
+          - name: MYSQL_HOST
+            value: mysql-companion-backend
+          - name: SCHEMA_REGISTRY_HOST_NAME
+            value: cigo-schema-registry
+          - name: KAFKA_CONNECT_HOST
+            value: cigo-kafka-connect #cigo-kafka-connect.default.svc.cluster.local # value: kafka-connect
+          - name: MYSQL_PORT
+            value: "3306"
+          - name: MYSQL_DATABASE
+            value: mytrac
+          - name: MYSQL_USER
+            value: root
+          - name: MYSQL_PASSWORD
+            value: "1234"
+        #image: companion-backend
+        image: sparsitytechnologies/companion-backend:latest
+        #imagePullPolicy: Never
+        imagePullPolicy: Always
+        name: companion-backend 
+        #        ports:
+        #        - containerPort: 4568
+      restartPolicy: Always

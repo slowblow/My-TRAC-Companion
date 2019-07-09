@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mytrac-ingress
+spec:
+  rules:
+  #- host: my-trac.eu #mytrac.minikube.spa
+  - http:
+      paths:
+      - path: /tracking-api/*
+        backend:
+         serviceName: tracking-container
+         servicePort: 8080
+      - path: /ws-login/*
+        backend:
+         serviceName: mytrac-ws-login
+         servicePort: 8080
+      - path: /ws-register/*
+        backend:
+         serviceName: ws-mytrac-register
+         servicePort: 8080
+      - path: /ws-trip/*
+        backend:
+         serviceName: ws-mytrac-trip
+         servicePort: 8080
+      - path: /ws-activity/*
+        backend:
+         serviceName: ws-mytrac-activity
+         servicePort: 8080
+      - path: /ws-firebase/*
+        backend:
+         serviceName: firebase-container
+         servicePort: 8080
+      - path: /ws-polls/*
+        backend:
+         serviceName: polls-container
+         servicePort: 8080
+      - path: /*
+        backend:
+         serviceName: mytrac-webapp-container
+         servicePort: 8080
