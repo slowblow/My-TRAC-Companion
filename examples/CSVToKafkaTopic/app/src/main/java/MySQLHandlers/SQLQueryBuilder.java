@@ -10,6 +10,20 @@ public class SQLQueryBuilder {
 
         boolean first = true;
 
+        boolean needId=true;
+        boolean needTs=true;
+
+        for(Schema.Field field : schema.getFields())
+        {
+            if (field.getName().equals("mytrac_id")) needId=false;
+            if (field.getName().equals(("mytrac_last_modified"))) needTs=false;
+        }
+
+        if(needId) {
+            sb.append("mytrac_id bigint NOT NULL AUTO_INCREMENT");
+            first=false;
+        }
+
 
         for(Schema.Field field : schema.getFields())
         {
@@ -21,14 +35,18 @@ public class SQLQueryBuilder {
         }
         sb.append(")");
 
-
+        if(needTs)
+        {
+            sb.append("mytrac_last_modified timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)");
+        }
 
         return sb.toString();
     }
 
     private static String buildFieldDescriptor(Schema.Field field) {
         String field_name = field.getName();
-        if(field_name.equals("id")) return "id serial NOT NULL PRIMARY KEY";
+        if(field_name.equals("mytrac_id")) return "mytrac_id serial NOT NULL PRIMARY KEY";
+        if(field_name.equals("mytrac_last_modified")) return "mytrac_last_modified timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)";
         String type = field.getType();
 
         String mysqlType = convertToMysqlType(type);

@@ -45,6 +45,8 @@ spec:
           value: connect_test
         - name: MYSQL_HOST
           value: mysql-csvtokafkatopic
+        - name: MYSQL_USER
+          value: confluent
         - name: MYSQL_PASSWORD
           value: confluent
         image: sparsitytechnologies/csvtokafkatopic:latest

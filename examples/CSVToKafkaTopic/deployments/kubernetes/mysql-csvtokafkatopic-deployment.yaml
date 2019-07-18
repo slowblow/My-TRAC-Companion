@@ -40,7 +40,9 @@ spec:
           value: confluent
         - name: MYSQL_DATABASE
           value: connect_test
-        image: mysql:5.5.59
+        image: mysql:5.7
+        args:
+            - "--ignore-db-dir=lost+found"
         name: mysql-csvtokafkatopic 
         ports:
         - containerPort: 6565

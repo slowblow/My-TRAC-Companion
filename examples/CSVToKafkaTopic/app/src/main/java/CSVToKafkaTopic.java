@@ -19,8 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static spark.Spark.*;
 
@@ -139,7 +138,11 @@ public class CSVToKafkaTopic {
         StringBuilder selectorCode  = new StringBuilder();
 
         selectorCode.append("Choose topic: <select name='schema_name'>\n");
-        for(String schema_name: schemas.keySet())
+
+        List<String> registeredSchemas = new ArrayList<>(schemas.keySet());
+        Collections.sort(registeredSchemas);
+
+        for(String schema_name: registeredSchemas)
         {
            // schema_name=schema_name.replaceAll("-value","");
             selectorCode.append("<option value=\""+schema_name+ "\">"+schema_name+"</option>\n");

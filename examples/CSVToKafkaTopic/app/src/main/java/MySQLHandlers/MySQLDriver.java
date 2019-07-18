@@ -64,7 +64,8 @@ public class MySQLDriver {
         for (Schema.Field field : schema.getFields())
         {
             String attribute_name = field.getName();
-            if(attribute_name.equals("id")) continue;
+            if(attribute_name.equals("mytrac_id")) continue;
+            if(attribute_name.equals("mytrac_last_modified")) continue;
 
             if(!first) tableAttributes.append(",");
             tableAttributes.append(" "+attribute_name);
