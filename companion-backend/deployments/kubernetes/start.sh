@@ -4,6 +4,8 @@ echo "Deploying Sparsity module..."
 
 
 kubectl create secret generic deploy-conf --from-file mytrac
+kubectl apply -f mysql-companion-volume.yaml
+kubectl apply -f mongo-companion-volume.yaml
 kubectl apply -f mysql-companion-backend-deployment.yaml
 kubectl apply -f mongo-companion-backend-deployment.yaml
 sleep 10

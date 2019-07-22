@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
@@ -7,29 +7,41 @@ metadata:
   creationTimestamp: null
   labels:
     io.kompose.service: mysql-companion-backend
+    #app: mysql-companion-backend
   name: mysql-companion-backend
 spec:
   replicas: 1
   strategy: {}
+  selector:
+    matchLabels:
+      app: mysql-companion-backend
   template:
     metadata:
-      creationTimestamp: null
       labels:
+        app: mysql-companion-backend
         io.kompose.service: mysql-companion-backend
     spec:
       containers:
-      - env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "1234"
-        - name: MYSQL_DATABASE
-          value: "mytrac"
-        image: mysql:5.7.23
-        name: mysql-companion-backend
-        ports:
-        - containerPort: 3306
-        resources: {}
-      restartPolicy: Always
-status: {}
+        - env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: "1234"
+          - name: MYSQL_DATABASE
+            value: "mytrac"
+          - name: TZ
+            value: Europe/Madrid
+          image: mysql:5.7.23
+          args:
+            - "--ignore-db-dir=lost+found"
+          name: mysql-companion-backend
+          ports:
+          - containerPort: 3306
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-volumeclaim
 
 ---
 
