@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: ws-mytrac-register
-        image: sparsitytechnologies/ws-mytrac-register
+        image: sparsitytechnologies/ws-mytrac-register:0.1
         ports:
           - containerPort: 8080
         env:
