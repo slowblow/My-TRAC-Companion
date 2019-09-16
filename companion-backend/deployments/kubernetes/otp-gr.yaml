@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: otp-gr
-        image: mytrac/otp-gr:v2.0
+        image: mytrac/otp-gr:v3.0
         resources:
           limits:
             memory: "4Gi"
