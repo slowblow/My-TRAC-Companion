@@ -8,6 +8,7 @@ kubectl delete -f firebase-container.yaml
 kubectl delete -f ws-mytrac-activity.yaml
 kubectl delete -f ws-mytrac-trip.yaml
 kubectl delete -f ws-mytrac-register.yaml
+kubectl delete -f mytrac-ws-media.yaml
 kubectl delete -f mytrac-ws-login.yaml
 kubectl delete -f tracking-container-deployment.yaml
 kubectl delete -f mongo-companion-backend-deployment.yaml

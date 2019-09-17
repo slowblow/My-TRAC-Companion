@@ -53,8 +53,7 @@ spec:
             value: "1234"
           - name: TZ
             value: Europe/Madrid
-        #image: companion-backend
-        image: sparsitytechnologies/companion-backend:0.2
+        image: mytrac/companion-backend:v1.1
         #imagePullPolicy: Never
         imagePullPolicy: Always
         name: companion-backend 

@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: ws-mytrac-activity
-        image: sparsitytechnologies/ws-mytrac-activity
+        image: mytrac/ws-mytrac-activity:v0.9.0-2019-09-04
         ports:
           - containerPort: 8080
         env:

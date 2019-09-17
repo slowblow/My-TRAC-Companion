@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: tracking-container
-        image: sparsitytechnologies/tracking-api
+        image: mytrac/tracking-api:v1.0.0
         ports:
           - containerPort: 8080
         env:

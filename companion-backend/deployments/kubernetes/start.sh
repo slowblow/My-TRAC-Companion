@@ -11,6 +11,7 @@ kubectl apply -f mongo-companion-backend-deployment.yaml
 sleep 10
 kubectl apply -f tracking-container-deployment.yaml
 kubectl apply -f mytrac-ws-login.yaml
+kubectl apply -f mytrac-ws-media.yaml
 kubectl apply -f ws-mytrac-register.yaml
 kubectl apply -f ws-mytrac-trip.yaml
 kubectl apply -f ws-mytrac-activity.yaml

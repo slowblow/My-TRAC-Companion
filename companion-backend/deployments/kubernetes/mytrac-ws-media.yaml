@@ -6,8 +6,8 @@ metadata:
     kompose.version: 1.18.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: mytrac-ws-login
-  name: mytrac-ws-login
+    io.kompose.service: mytrac-ws-media
+  name: mytrac-ws-media
 spec:
   replicas: 1
   strategy:
@@ -16,11 +16,11 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        io.kompose.service: mytrac-ws-login
+        io.kompose.service: mytrac-ws-media
     spec:
       containers:
-      - name: mytrac-ws-login
-        image: mytrac/mytrac-ws-login:v1.6.1
+      - name: mytrac-ws-media
+        image: mytrac/mytrac-ws-media:v1.2.0
         ports:
           - containerPort: 8080
         env:
@@ -47,16 +47,16 @@ metadata:
     kompose.version: 1.18.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: mytrac-ws-login
-  name: mytrac-ws-login
+    io.kompose.service: mytrac-ws-media
+  name: mytrac-ws-media
 spec:
   type: NodePort
   ports:
-  - name: login-server
+  - name: media-server
     port: 8080
     #targetPort: 8080
   selector:
-    io.kompose.service: mytrac-ws-login
+    io.kompose.service: mytrac-ws-media
 status:
   loadBalancer: {}
 
